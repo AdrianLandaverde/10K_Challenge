@@ -1,0 +1,134 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+df_puntos<- read.csv("Poblacion_Aleatoria.csv")
+```
+
+```{r}
+ggplot(data = df_puntos, aes(x = "", y = Poblacion)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Población de la muestra") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_puntos, aes(x = "", y = DistanciaHospital)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Distancia Mínima a un Hospital de la muestra") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_puntos, aes(x = "", y = nUnidades)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Cantidad de Unidades Médicas en un radio de 5Km de la muestra") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_puntos, aes(x = "", y = ConsultoriosG)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Cantidad de Consultorios Generales en un radio de 5Km de la muestra") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_puntos, aes(x = "", y = ConsultoriosO)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Cantidad de Consultorios de Otras áreas en un radio de 5Km de la muestra") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_puntos, aes(x = "", y = CamasH)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Cantidad de Camas de Hospitalización en un radio de 5Km de la muestra") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_puntos, aes(x = "", y = CamasO)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Cantidad de Camas de Otras áreas en un radio de 5Km de la muestra") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_puntos, aes(x = "", y = nUnidades/Poblacion)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Unidades médicas en un radio de 5Km de la muestra entre la población") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+```{r}
+df_puntos$Division<- df_puntos$nUnidades/df_puntos$Poblacion
+```
+
+
+```{r}
+df_puntos$DistanciaBajo<- sqrt((df_puntos$DistanciaHospital - 13000)^2 +(df_puntos$nUnidades -3)^2 + (df_puntos$ConsultoriosG-3)^2 + (df_puntos$ConsultoriosO-0)^2 + (df_puntos$CamasH-0)^2 +(df_puntos$CamasO-0)^2 + (df_puntos$Division-0)^2)
+```
+
+```{r}
+df_puntos$DistanciaAlto<- sqrt((df_puntos$DistanciaHospital - 5000)^2 +(df_puntos$nUnidades -8)^2 + (df_puntos$ConsultoriosG-15)^2 + (df_puntos$ConsultoriosO-10)^2 + (df_puntos$CamasH-10)^2 +(df_puntos$CamasO-15)^2 + (df_puntos$Division-(1/2000))^2)
+```
+
+```{r}
+df_puntos$Is_Alto<- df_puntos$DistanciaAlto<df_puntos$DistanciaBajo
+```
+
+```{r}
+data.frame(table(df_puntos$Is_Alto))
+```
+```{r}
+write.csv(df_puntos,"Poblacion_Aleatoria_Clasificada.csv", row.names = FALSE)
+```
+
