@@ -1,0 +1,362 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library("mxmaps")
+```
+
+## 01. Leer Datos
+```{r}
+df_poblacion<- read.csv("Poblacion.csv")
+df_Hospitales<- read.csv("Ubiacion_Hospitales2.csv",encoding = "utf-8")
+```
+
+## 02. Graficas de Poblacion
+```{r}
+data("df_mxmunicipio_2020")
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$pop
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Población por Municipio del Estado de México",
+                       show_states = FALSE,
+                       legend = "Personas")
+```
+```{r}
+data("df_mxmunicipio_2020")
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$pop
+df_mxmunicipio_2020[697,18]<- 4862
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Población por Municipio del Estado de México sin Ecatepec",
+                       show_states = FALSE,
+                       legend = "Personas")
+```
+```{r}
+df_Mexico<- df_mxmunicipio_2020[df_mxmunicipio_2020$state_name== "México",]
+df_Mexico <- df_Mexico[order(df_Mexico$pop, decreasing = TRUE), ]
+df_Mexico1<- df_Mexico[1:50,]
+df_Mexico2<- df_Mexico[51:125,]
+ggplot(data=df_Mexico1, aes(x=reorder(municipio_name,-pop), y=pop, fill=pop
+                           )) + 
+    geom_bar(stat="identity", position="dodge") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ggtitle("Población de los 50 municipios más poblados")
+
+ggplot(data=df_Mexico2, aes(x=reorder(municipio_name,-pop), y=pop, fill=pop
+                           )) + 
+    geom_bar(stat="identity", position="dodge") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ggtitle("Población de los municipios 65 municipios menos poblados")
+```
+
+## 03. Graficos Hospital
+```{r}
+df_HospitalesMunicipio<- df_Hospitales%>%
+  group_by(Municipio) %>%
+  summarise(Camas = sum(Camas), Consultorios= sum(Consultorios), unidades=n())
+
+df_HospitalesT1<- df_Hospitales[df_Hospitales$Tipo=="UNIDAD DE HOSPITALIZACION",]
+df_HospitalesT2<- df_Hospitales[df_Hospitales$Tipo=="UNIDAD DE CONSULTA EXTERNA",]
+df_HospitalesT3<- df_Hospitales[df_Hospitales$Tipo=="ESTABLECIMIENTO DE APOYO",]
+
+df_HospitalesT1<- df_HospitalesT1%>%
+  group_by(Municipio) %>%
+  summarise(Hospitales= n())
+
+df_HospitalesT2<- df_HospitalesT2%>%
+  group_by(Municipio) %>%
+  summarise(Consulta= n())
+
+df_HospitalesT3<- df_HospitalesT3%>%
+  group_by(Municipio) %>%
+  summarise(Apoyo= n())
+
+Municipios<- data.frame(unique(df_Hospitales$Municipio))
+colnames(Municipios)<- c("Municipio")
+
+Camasm<- c(df_HospitalesMunicipio$Camas,0,0,0,0,0)
+ConsultoriosM<- c(df_HospitalesMunicipio$Consultorios,0,0,0,0,0)
+UnidadesM<- c(df_HospitalesMunicipio$unidades,0,0,0,0,0)
+
+df_UHospitalizacion<- merge(x=Municipios,y=df_HospitalesT1, all.x=TRUE)
+df_UHospitalizacion[is.na(df_UHospitalizacion)] <- 0
+
+df_UConsulta<- merge(x=Municipios,y=df_HospitalesT2, all.x=TRUE)
+df_UConsulta[is.na(df_UConsulta)] <- 0
+
+df_UApoyo<- merge(x=Municipios,y=df_HospitalesT3, all.x=TRUE)
+df_UApoyo[is.na(df_UApoyo)] <- 0
+
+hospitalizacion<- c(df_UHospitalizacion$Hospitales,0,0,0,0,0)
+consulta<- c(df_UConsulta$Consulta,0,0,0,0,0)
+apoyo<- c(df_UApoyo$Apoyo,0,0,0,0,0)
+
+colnames(df_Mexico)[8]<- "Municipio"
+
+df_Mexico<- merge(x=df_Mexico,y=df_UHospitalizacion, all.x = TRUE)
+df_Mexico<- merge(x=df_Mexico,y=df_UConsulta, all.x = TRUE)
+df_Mexico<- merge(x=df_Mexico,y=df_UApoyo, all.x = TRUE)
+df_Mexico<- merge(x=df_Mexico,y=df_HospitalesMunicipio, all.x = TRUE)
+
+
+
+```
+
+```{r}
+data("df_mxmunicipio_2020")
+colnames(df_mxmunicipio_2020)[8]<- "Municipio"
+df_mxmunicipio_2020<- merge(x=df_mxmunicipio_2020, y=df_Mexico, all.x = TRUE)
+```
+
+
+```{r}
+
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$unidades
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Número de Unidades Médicas por Municipio",
+                       show_states = FALSE,
+                       legend = "Cantidad")
+print("Municipios con 0 Unidades Médicas")
+cero<- c(df_Mexico[df_Mexico$unidades==0,1])
+print(cero)
+```
+```{r}
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$Hospitales
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Número de Unidades de Hospitalización por Municipio",
+                       show_states = FALSE,
+                       legend = "Cantidad")
+print("Municipios con 0 Unidades de Hospitalización")
+cero<- c(df_Mexico[df_Mexico$Hospitales==0,1])
+print(cero)
+```
+
+
+```{r}
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$Consulta
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Número de Unidades de Consulta Externa por Municipio",
+                       show_states = FALSE,
+                       legend = "Cantidad")
+print("Municipios con 0 Unidades de Consulta Externa")
+cero<- c(df_Mexico[df_Mexico$Consulta==0,1])
+print(cero)
+```
+
+
+```{r}
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$Apoyo
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Número de Establecimientos de Apoyo por Municipio",
+                       show_states = FALSE,
+                       legend = "Cantidad")
+print("Municipios con >0 Establecimientos de Apoyo")
+cero<- c(df_Mexico[df_Mexico$Apoyo>0,1])
+print(cero)
+```
+
+```{r}
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$Camas
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Número de Camas Existentes por Municipio",
+                       show_states = FALSE,
+                       legend = "Cantidad")
+print("Municipios con 0 Camas")
+cero<- c(df_Mexico[df_Mexico$Camas==0,1])
+print(cero)
+```
+```{r}
+
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$Consultorios
+
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Número de Consultorios Existentes por Municipio",
+                       show_states = FALSE,
+                       legend = "Cantidad")
+print("Municipios con 0 Consultorios")
+cero<- c(df_Mexico[df_Mexico$Consultorios==0,1])
+print(cero)
+```
+
+```{r}
+options(scipen=999)
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$unidades/df_mxmunicipio_2020$pop
+
+df_mxmunicipio_2020$value<- replace(df_mxmunicipio_2020$value,is.infinite(df_mxmunicipio_2020$value),0)
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Número de Unidades Médicas por Persona",
+                       show_states = FALSE,
+                       legend = "Cantidad")
+```
+
+```{r}
+df_mxmunicipio_2020$value<- df_mxmunicipio_2020$pop/df_mxmunicipio_2020$unidades
+
+df_mxmunicipio_2020$value<- replace(df_mxmunicipio_2020$value,is.infinite(df_mxmunicipio_2020$value),0)
+
+mxmunicipio_choropleth(df_mxmunicipio_2020, num_colors = 1,
+                       zoom = subset(df_mxmunicipio_2020, state_name %in% 
+                                       c("México"))$region,
+                       title = "Número de Personas por Unidad Médica",
+                       show_states = FALSE,
+                       legend = "Cantidad")
+```
+
+## Análisis Estadístico
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = unidades)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Unidades Médicas en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = Hospitales)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Unidades de Hospitalización en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = Apoyo)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Establecimientos de Apoyo en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = Consulta)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Unidades de Consulta Externa en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = Camas)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Camas en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = Consultorios)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Consultorios en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = pop/unidades)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Personas por Unidad Médica en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = unidades/pop)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Unidades Médicas por Persona en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+```{r}
+ggplot(data = df_Mexico, aes(x = "", y = Hospitales)) +
+       stat_boxplot(geom = "errorbar",      # Bigotes
+                    width = 0.2) +
+       geom_boxplot(fill = "#4271AE",       # Color de la caja
+                    outlier.colour = "red", # Color de los valores atípicos
+                    alpha = 0.9) +          # Transparencia del color de la caja
+       ggtitle("Distribución de Unidades de Hospitalización en el Estado de México") + # Título del plot
+       xlab("") +   # Etiqueta del eje x
+       coord_flip()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
